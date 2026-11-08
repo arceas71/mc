@@ -12,10 +12,16 @@ No Mojang assets are used or included, and none should ever be added.
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-07, Phase 0 |
-| **Current phase** | Phase 0: repo skeleton |
-| **Working on right now** | Creating the folder layout, then Phase 1 (noise, blocks, procedural textures) |
-| **Playable yet?** | ❌ not yet |
+| **Last updated** | 2026-11-08, Phase 1 (core data) |
+| **Current phase** | Phase 1 nearly done → starting Phase 2 (world engine) |
+| **Working on right now** | Committing Phase 1; next is `js/worldgen.js` (terrain, biomes, caves) |
+| **Playable yet?** | ❌ **not yet**. Nothing runs in a browser so far. The only thing to look at is the texture sheet below. |
+
+**What you can see right now:** the generated texture sheet (140 textures, all drawn by code):
+
+![texture sheet](docs/textures.png)
+
+Regenerate it any time with `node tools/atlas.mjs docs/textures.png 16 4`.
 | **Live site** | https://arceas71.github.io/mc/ (live once Phase 7 workflow is merged and Pages source is set to "GitHub Actions") |
 
 ### One-time setup the repo owner must do
@@ -30,7 +36,7 @@ No Mojang assets are used or included, and none should ever be added.
 
 | Action | Desktop | Phone |
 |---|---|---|
-| Move | `W A S D` | left joystick |
+| Move | `W A S D` | left joystick: up = forward, down = back, left / right = strafe (analog, diagonals work) |
 | Look | mouse | drag on right half |
 | Jump / swim up | `Space` | jump button |
 | Fly (creative) | double-tap `Space`, `Shift` to go down | jump / sneak buttons |
@@ -51,14 +57,16 @@ No Mojang assets are used or included, and none should ever be added.
 Legend: `[x]` done, `[~]` partly done, `[ ]` not started.
 
 ### Phase 0: skeleton
-- [~] Repo layout, README (this file)
+- [x] Repo layout, README (this file)
 
 ### Phase 1: core data
-- [ ] Seeded RNG + Perlin noise (`js/util.js`, `js/noise.js`)
-- [ ] Block registry (`js/blocks.js`)
-- [ ] Procedural 16x16 block textures, vanilla style (`js/textures.js`)
-- [ ] Item sprites (tools, ingots, food…)
-- [ ] Biome grass / foliage / water tinting (vanilla colormap triangle formula)
+- [x] Seeded RNG + Perlin noise (`js/util.js`, `js/noise.js`)
+- [x] Block registry, 67 blocks (`js/blocks.js`)
+- [x] Procedural 16x16 block textures, vanilla style (`js/textures.js`): 140 textures incl. 8 water + 8 lava frames, 10 crack stages
+- [x] Item sprites: tools (wood/stone/iron/gold/diamond), stick, coal, charcoal, diamond, ingots, apple, dyes, flint (`item_*` textures)
+- [x] PNG encoder + texture sheet dump (`tools/png.mjs`, `tools/atlas.mjs`)
+- [ ] Biome grass / foliage / water tinting: only a fixed typical tint exists (in `tools/atlas.mjs`); the real per-biome colormap still needs writing (do it with the renderer/mesher)
+- [ ] Review pass on textures vs. vanilla look (see NEXT STEPS)
 
 ### Phase 2: world engine
 - [ ] Chunk storage (16x256x16, 16 sections), light arrays
@@ -118,15 +126,17 @@ Legend: `[x]` done, `[~]` partly done, `[ ]` not started.
 
 ## 📜 Changelog (newest first, one line per change)
 
+- **2026-11-08**: Phase 1: added `js/util.js`, `js/noise.js`, `js/blocks.js` (67 blocks), `js/textures.js` (140 textures), `tools/png.mjs`, `tools/atlas.mjs`, `docs/textures.png`. Joystick spec noted in Controls.
 - **2026-11-07**: Phase 0: initial README with live status, checklist, and roadmap.
 
 ---
 
 ## ➡️ NEXT STEPS (for the next developer or AI: do these in order)
 
-1. Finish Phase 0 → Phase 1 (see checklist). Start with `js/util.js`, `js/noise.js`, `js/blocks.js`, `js/textures.js`.
-2. After **every** change: tick the checklist, add a changelog line, update the LIVE STATUS block, commit, push.
-3. Details of the *current* task will be written here as work proceeds.
+1. **Phase 2, start here:** write `js/chunk.js` (storage, see "Key design decisions"), then `js/worldgen.js` (density terrain, sea level 63, biomes, caves, ores, trees), then `js/light.js`, `js/mesher.js`, `js/world.js`.
+2. Before relying on a texture, look at `docs/textures.png`. Anything that doesn't look vanilla enough should be redrawn in `js/textures.js` (every texture is a small function there).
+3. Test each module in plain Node before moving on (`tools/*.mjs`). There is no browser in the sandbox.
+4. After **every** change: tick the checklist, add a changelog line, update the LIVE STATUS block, commit, push.
 
 ---
 
@@ -136,11 +146,11 @@ Planned layout (files marked ✔ exist):
 
 ```
 index.html              page shell: <canvas id=gl>, <canvas id=ui>, error overlay
-js/package.json         {"type":"module"} so Node can import the game logic for tests
-js/util.js              RNG, hashing, math helpers
-js/noise.js             seeded improved Perlin noise + octave helpers
-js/blocks.js            block registry (ids, textures, hardness, light, models)
-js/textures.js          procedural texture generation (pure JS, runs in browser AND Node)
+js/package.json     ✔   {"type":"module"} so Node can import the game logic for tests
+js/util.js          ✔   RNG, hashing, math helpers
+js/noise.js         ✔   seeded improved Perlin noise + octave helpers
+js/blocks.js        ✔   block registry (ids, textures, hardness, light, models)
+js/textures.js      ✔   procedural texture generation (pure JS, runs in browser AND Node)
 js/items.js             items, tools, recipes, drops
 js/worldgen.js          terrain, biomes, caves, ores, trees (deterministic from seed)
 js/chunk.js             Chunk class
@@ -156,7 +166,10 @@ js/main.js              boot + game loop
 sw.js, manifest.webmanifest, icons/
 electron/               Windows desktop wrapper
 .github/workflows/      pages.yml, windows.yml, android.yml
-tools/                  Node-only dev tools: PNG encoder, atlas dump, software preview render, tests
+tools/png.mjs       ✔   PNG encoder (no deps)
+tools/atlas.mjs     ✔   dumps all textures to a PNG sheet (docs/textures.png)
+tools/                  (planned) software preview render, smoke test
+docs/textures.png   ✔   current texture sheet, embedded in this README
 ```
 
 ### Key design decisions (read before editing)
